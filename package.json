@@ -1,0 +1,16 @@
+{
+  "name": "voronoi-fragmenter",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "Marco Quirino",
+  "license": "MIT",
+  "scripts": {
+    "test": "test",
+    "start": "node --experimental-modules index.js"
+  },
+  "dependencies": {
+    "voronoi": "^1.0.0"
+  }
+}
