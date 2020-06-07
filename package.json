@@ -11,6 +11,9 @@
     "start": "node --experimental-modules index.js"
   },
   "dependencies": {
+    "rimraf": "^3.0.2",
+    "sharp": "^0.25.3",
+    "svg-builder": "^1.0.0",
     "voronoi": "^1.0.0"
   }
 }
