@@ -6,6 +6,7 @@ import fs from 'fs'
 import { getRandomIntBetweem, getRandgomBetween } from './random.js';
 
 const FIXED_SIZE = 800;
+const fileRgx = new RegExp('(.+\.png)|(.+\.jpg)', 'ig')
 
 const Main = async () => {
     const voronoi = new Voronoi();
@@ -13,7 +14,7 @@ const Main = async () => {
     const files = fs.readdirSync('./data/in')
     let fid = 0
     let pairCount = 0
-   
+
     rimraf.sync("./data/out");
 
     fs.mkdirSync(`./data/out/`);
@@ -22,7 +23,7 @@ const Main = async () => {
 
 
     await asyncForEach(files, async file => {
-        if (file.includes('.png') || file.includes('.jpg')) {
+        if (file.match(fileRgx)) {
             console.log('Fracturing: ', file)
             const sites = getRandomSites()
             const diagram = voronoi.compute(sites, bbox)
@@ -33,13 +34,59 @@ const Main = async () => {
                 const siteId = cell.site.voronoiId
                 const svg = cellSvgs[siteId]
                 const shape = Buffer.from(svg)
+
+                let minX = FIXED_SIZE
+                let minY = FIXED_SIZE
+                let maxX = 0
+                let maxY = 0
+
+                cell.halfedges.forEach(({ edge: { va: { x: x1, y: y1, }, vb: { x: x2, y: y2 } } }) => {
+                    if (minX > x1) minX = x1
+                    if (minX > x2) minX = x2
+                    if (maxX < x1) maxX = x1
+                    if (maxX < x2) maxX = x2
+
+                    if (minY > y1) minY = y1
+                    if (minY > y2) minY = y2
+                    if (maxY < y1) maxY = y1
+                    if (maxY < y2) maxY = y2
+                })
+
+                minX = Math.max(0, Math.floor(minX))
+                minY = Math.max(0, Math.floor(minY))
+                maxX = Math.min(FIXED_SIZE, Math.ceil(maxX))
+                maxY = Math.min(FIXED_SIZE, Math.ceil(maxY))
+
+                const imgWidth = maxX - minX
+                const imgHeight = maxY - minY
+
                 try {
-                    await sharp(`./data/in/${file}`)
+                    const clipped = await sharp(`./data/in/${file}`)
                         .resize({ width: FIXED_SIZE, height: FIXED_SIZE, options: { fit: 'contain' } })
                         .composite([{
                             input: shape,
                             blend: 'dest-in'
                         }])
+                        .toBuffer();
+
+                    const translated = await sharp(clipped)
+                        .extract({
+                            left: minX,
+                            top: minY,
+                            width: imgWidth,
+                            height: imgHeight,
+                        })
+                        .extend({
+                            left: Math.floor((FIXED_SIZE - imgWidth) / 2),
+                            right: Math.floor((FIXED_SIZE - imgWidth) / 2) + (FIXED_SIZE - (imgWidth + 2 * (Math.floor((FIXED_SIZE - imgWidth) / 2)))),
+                            top: Math.floor((FIXED_SIZE - imgHeight) / 2),
+                            bottom: Math.floor((FIXED_SIZE - imgHeight) / 2) + (FIXED_SIZE - (imgHeight + 2 * (Math.floor((FIXED_SIZE - imgHeight) / 2)))),
+
+                        })
+                        .toBuffer();
+
+                        await sharp(translated)
+                        .rotate(90 * getRandomIntBetweem(0,3))
                         .jpeg()
                         .toFile(`./data/out/all/${fid}_${siteId}.jpg`)
                 } catch (writeErr) {

@@ -74,7 +74,7 @@ const getRandomControlPoint = ({ va: { x: x1, y: y1, }, vb: { x: x2, y: y2 } }) 
     const rx1 = getRandgomBetween(Math.min(x1, x2) + dist / 5, Math.max(x1, x2) - dist / 5)
     const ry1 = (m * rx1) + b;
 
-    const f = (minDistanceToClosestVertice(x1, y1, x2, y2, rx1, ry1) / getRandgomBetween(3,5));
+    const f = (minDistanceToClosestVertice(x1, y1, x2, y2, rx1, ry1) / getRandgomBetween(5,10));
 
     const cx1 = (-(Math.sqrt((Math.pow(f, 2) * Math.pow(m, 2)) + Math.pow(f, 2)) / m) + (rx1 / Math.pow(m, 2)) + rx1) / ((1 / Math.pow(m, 2)) + 1)
     const cy1 = (-cx1 + rx1) / m + ry1
