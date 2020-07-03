@@ -15,11 +15,14 @@ const Main = async () => {
     let fid = 0
     let pairCount = 0
 
+    const fileNames = []
+
     rimraf.sync("./data/out");
 
-    fs.mkdirSync(`./data/out/`);
-    fs.mkdirSync(`./data/out/pair`);
-    fs.mkdirSync(`./data/out/all`);
+    fs.mkdirSync(`./data/out/`)
+    fs.mkdirSync(`./data/out/pair`)
+    fs.mkdirSync(`./data/out/not_pair`)
+    fs.mkdirSync(`./data/out/all`)
 
 
     await asyncForEach(files, async file => {
@@ -85,10 +88,12 @@ const Main = async () => {
                         })
                         .toBuffer();
 
-                        await sharp(translated)
-                        .rotate(90 * getRandomIntBetweem(0,3))
+                    await sharp(translated)
+                        .rotate(90 * getRandomIntBetweem(0, 3))
                         .jpeg()
                         .toFile(`./data/out/all/${fid}_${siteId}.jpg`)
+
+                    fileNames.push(`${fid}_${siteId}.jpg`)
                 } catch (writeErr) {
                     console.log("Error writing file: ", writeErr)
                 }
@@ -112,6 +117,37 @@ const Main = async () => {
             fid++
         }
     })
+
+    const usedFileNames = {};
+
+    for (let i = 0; i < pairCount; i++) {
+        let written = false;
+        console.log("Picking not pair: ", i)
+        while (!written) {
+            const fn1 = fileNames[getRandomIntBetweem(0, fileNames.length - 1)]
+            const fn2 = fileNames[getRandomIntBetweem(0, fileNames.length - 1)]
+
+            if(fn1.split('_')[0] === fn2.split('_')[0])
+                continue;
+
+            if (!usedFileNames[fn1] || !usedFileNames[fn1].includes(fn2)) {
+
+                fs.mkdirSync(`./data/out/not_pair/${i}`)
+
+                fs.copyFileSync(`./data/out/all/${fn1}`, `./data/out/not_pair/${i}/${fn1}`)
+                fs.copyFileSync(`./data/out/all/${fn2}`, `./data/out/not_pair/${i}/${fn2}`)
+                
+                if(!usedFileNames[fn1]) usedFileNames[fn1] = []
+                
+                if(!usedFileNames[fn2]) usedFileNames[fn2] = []
+
+                usedFileNames[fn1].push(fn2)
+                usedFileNames[fn2].push(fn1)
+                
+                written = true;
+            }
+        }
+    }
 }
 
 
